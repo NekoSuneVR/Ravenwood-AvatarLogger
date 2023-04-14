@@ -1,52 +1,105 @@
 var clc = require("cli-color");
-let ascii_text_generator = require('ascii-text-generator');
 const chokidar = require('chokidar');
 const fs = require('fs');
-const prompt = require('prompt-sync')();
 const fetch = require("node-fetch");
 const DiscordRPC = require('discord-rpc');
+const { auth, failed, success, log, uiQuestion } = require('./uibuilder.js');
+const config = require('./configmanager');
+
+
+//create config file in LocalAppData Folder under Ravenwood directory
+config.createConfig()
+//get config file value from config store
+const data = config.readConfig();
+var ccacheloc = data.cachelocation
+
+
 
 var userid = ""
+var cacheloc = ""
+
 
 //Get Discord User
-const clientId = '1040393005640732683';
-const rpc = new DiscordRPC.Client({ transport: 'ipc' });
-rpc.on('ready', () => {
-  console.log('Authed for Discord User',rpc.user.username+ "#"+rpc.user.discriminator ,"(",rpc.user.id, ")");
-  userid = rpc.user.id
-});
-rpc.login({ clientId }).catch(console.error);
+async function connectDC() {
+  try {
+    const clientId = '1040393005640732683';
+    const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+    rpc.on('ready', () => {
+      auth(` ${rpc.user.username}#${rpc.user.discriminator}`);
+      userid = rpc.user.id
+    });
+    let login = await rpc.login({ clientId })
+  } catch  {
 
-
-//Create ASCII Text
-let input_text = "RAVENWOOD";
-let ascii_text =ascii_text_generator(input_text,"2");
-let input_text2 = " AVI LOGGER";
-let ascii_text2 =ascii_text_generator(input_text2,"2");
-//Send Welcome Text
-console.log(clc.magenta("####################################################################################"))
-console.log((clc.magenta(ascii_text)));
-console.log((clc.magentaBright(ascii_text2)));
-console.log(clc.magenta("####################################################################################"))
-console.log(clc.red("------------------------------ WATCHING VRCHAT CACHE -------------------------------"))
-//Let user define cache location [TODO: SAVE TO CONFIG IN APPDATA SO USER DOESN'T HAVE TO ENTER EVERY TIME]
-var cacheloc = prompt('Enter VRCHAT Cache location (Leave blank for default "%APPDATA%/LocalLow/VRChat/VRChat/Cache-WindowsPlayer"): ');
-if (cacheloc === "") {
-  var appdataloc = `${process.env.APPDATA}`.replace("\\Roaming","")
-  cacheloc = `${appdataloc}`.replace("\\","/") + "/LocalLow/VRChat/VRChat/Cache-WindowsPlayer"
-} else {
-  cacheloc.replace("\\","/")
-}
-//Let user define if they want to scan cache before logging
-var initial = prompt('Do you want to scan your cache before logging? (Y/N): ');
-if (initial === "Y") {
-    var login = false
-} else {
-  cacheloc.replace("\\","/")
-    var login = true
+  }
 }
 
-watch()
+function getcachelocation() {
+  return new Promise(resolve => {
+    uiQuestion(" Cache Location ", 'Enter VRCHAT Cache location (Leave blank for default)', val  => resolve(val))});
+}
+function promtloginitial() {
+  return new Promise(resolve => {
+    uiQuestion(" Inital Log ", 'Do you want to scan your cache before logging? (Y/N)', val  => resolve(val))});
+}
+
+checkDC()
+
+
+
+auth("NOT AUTHED")
+success("0")
+failed("0")
+
+async function checkDC() {
+  var i = 0;
+  //await new Promise(r => setTimeout(r, 200000));
+  try {
+    //log("Connecting to Discord RPC...")
+    while (userid === "") {
+      connectDC()
+      if (i === 5) {
+        log("Failed to connect to Discord RPC, try restarting Discord or running as Administrator! Closing in 5 seconds...")
+        i++
+        await new Promise(r => setTimeout(r, 5000));
+        process.exit()
+      } else if (i === 6) {
+      } else {
+        auth("(Attempt " + (i+1) + "/5)")
+        await new Promise(r => setTimeout(r, 1000));
+        i++
+      }
+
+    }
+    if (ccacheloc === undefined) {
+      cacheloc = await getcachelocation()
+      if (cacheloc === null) {
+        var appdataloc = `${process.env.APPDATA}`.replace("\\Roaming","")
+        cacheloc = `${appdataloc}`.replace("\\","/") + "/LocalLow/VRChat/VRChat/Cache-WindowsPlayer"
+      } else {
+        cacheloc.replace("\\","/")
+      }
+      //save cacheloc to config file
+      config.writeConfig({ cachelocation: cacheloc });
+      log("Cache location saved to config file! (%appdata%/Ravenwood/config.json)")
+    } else {
+      cacheloc = ccacheloc
+    }
+
+    initial = await promtloginitial()
+    if (initial === "Y" || initial === "y") {
+        var login = false
+    } else {
+      cacheloc.replace("\\","/")
+        var login = true
+    }
+    watch(cacheloc, login)
+  } catch (e) {
+  }
+  
+}
+
+
 
 function readCache(filePath, untilText) {
   try {
@@ -84,20 +137,25 @@ function readCache(filePath, untilText) {
   }
 }
 
+var successi = 0
+var failedi = 0
 
 
 
-
-async function watch() {
+async function watch(cacheloc, login) {
   var watcher = chokidar.watch(cacheloc, {ignored: /^\./, persistent: true, ignoreInitial:login});
 
   watcher.on('add', async function(path) {
     if (`${path}`.includes('_data') === true) {
       var data = readCache(path, 'prefab-id-v1');
       if (data === null || data.length !== 41) {
-        console.log(clc.red('FOUND AVATAR 📕 ') + ' ' + 'BROKEN! DISCARDING!');
+        log(`${clc.red('FOUND AVATAR - ')}BROKEN! DISCARDING!`);
+        failedi++
+        failed(`${failedi}`)
       } else {
-        console.log(clc.green('FOUND AVATAR 📗 ') + ' ' + data);
+        log(`${clc.green('FOUND AVATAR - ')}${data}`);
+        successi++
+        success(`${successi}`)
         putAvatars2(data)
       }
     }
