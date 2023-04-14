@@ -176,6 +176,11 @@ async function putAvatars2(id2) {
           credentials: "same-origin",
           body: ids
       });
+      const auth = await response.json();
+
+      if (typeof await auth.error !== 'undefined') {
+        throw ''
+      }
       //console.log(await response)
 } catch(err) {
       //console.log('Error parsing JSON string:', err)
