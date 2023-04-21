@@ -1,9 +1,9 @@
-var clc = require("cli-color");
+const clc = require('cli-color')
 const chokidar = require('chokidar');
 const fs = require('fs');
 const fetch = require("node-fetch");
 const DiscordRPC = require('discord-rpc');
-const { auth, failed, success, log, uiQuestion } = require('./uibuilder.js');
+const { auth, failed, success, log, uiQuestion, setSessionSuccess, setTotalSuccess } = require('./uibuilder.js');
 const config = require('./configmanager');
 
 
@@ -13,7 +13,7 @@ config.createConfig()
 const data = config.readConfig();
 var ccacheloc = data.cachelocation
 
-
+var successsess = 0
 
 var userid = ""
 var cacheloc = ""
@@ -94,12 +94,31 @@ async function checkDC() {
         var login = true
     }
     watch(cacheloc, login)
+    var uploads = await getuser(userid); 
+    setTotalSuccess(`${uploads[0].uploads} (Rank: ${uploads[0].user_rank})`)
+    setInterval(async function() {
+      uploads = await getuser(userid); 
+      setTotalSuccess(`${uploads[0].uploads} (Rank: ${uploads[0].user_rank})`)
+    }, 500 * 1000);
   } catch (e) {
   }
   
 }
 
-
+async function getuser(id) {
+  const response = await fetch(`https://api.ravenwood.dev/avatars/leaderboard`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cache": "no-cache",
+      "User-Agent": "LuasVRCuserinfoDiscordBot/1.4.1 contact@ravenwood.dev"
+    },
+    credentials: "same-origin",
+    body: `{"user": "${id}"}`
+    });
+    
+    return await response.json();
+}
 
 function readCache(filePath, untilText) {
   try {
@@ -166,7 +185,7 @@ async function watch(cacheloc, login) {
 async function putAvatars2(id2) {
   try {
       const ids = `[{"id": "${id2}", "userid": "${userid}"}]`
-      const response = fetch(`https://vrcdbprivate.ravenwood.dev/putavatarauth.php`, {
+      const response = await fetch(`https://api.ravenwood.dev/avatars/putavatar`, {
           method: 'PUT',
           headers: {
             "Content-Type": "application/json",
@@ -176,11 +195,11 @@ async function putAvatars2(id2) {
           credentials: "same-origin",
           body: ids
       });
-      const auth = await response.json();
+      const body = await response.json()
+    if (body.status.status === 201) {
+        setSessionSuccess(`${successsess++}`)
+    }
 
-      if (typeof await auth.error !== 'undefined') {
-        throw ''
-      }
       //console.log(await response)
 } catch(err) {
       //console.log('Error parsing JSON string:', err)

@@ -2,10 +2,10 @@ var blessed = require('reblessed');
 
 var screen = blessed.screen({ smartCSR: true, title: 'Ravenwood Logger' }),
     body = blessed.box({
-      top: 3,
+      top: 6,
       left: 0,
       width: '100%',
-      height: '90%',
+      height: '80%',
       scrollable: true,
       mouse: true,
       vi: true,
@@ -26,7 +26,7 @@ var screen = blessed.screen({ smartCSR: true, title: 'Ravenwood Logger' }),
         width: '30%',
         height: 3,
         align: 'center',
-        content: 'Ravenwood Logger (v1.0.1)',
+        content: 'Ravenwood Logger (v1.0.2)',
         style: {
           fg: 'white',
           bg: 'purple'
@@ -77,7 +77,37 @@ var screen = blessed.screen({ smartCSR: true, title: 'Ravenwood Logger' }),
           type: 'line'
         },
     });
+    sessionsuccessstatusbar = blessed.box({
+      top: 3,
+      left: '60%',
+      width: '20%',
+      height: 3,
+      label: ' Uploaded ',
+      content: '0',
+      style: {
+        fg: 'white'
+      },
+      border: {
+        type: 'line'
+      },
+    });
+    totalsuccessstatusbar = blessed.box({
+      top: 3,
+      left: '80%',
+      width: '20%',
+      height: 3,
+      label: ' Total ',
+      content: 'Fetching...',
+      style: {
+        fg: 'white'
+      },
+      border: {
+        type: 'line'
+      },
+  });
 
+screen.append(sessionsuccessstatusbar);
+screen.append(totalsuccessstatusbar);
 screen.append(authstatusbar);
 screen.append(successstatusbar);
 screen.append(failedstatusbar);
@@ -88,6 +118,8 @@ screen.key(['escape', 'q', 'C-c'], function(ch, key) {
   return process.exit(0);
 });
 
+function setTotalSuccess(val) { totalsuccessstatusbar.setContent(val); screen.render(); }
+function setSessionSuccess(val) { sessionsuccessstatusbar.setContent(val); screen.render(); }
 function auth(text) { authstatusbar.setContent(text); screen.render(); }
 function success(text) { successstatusbar.setContent(text); screen.render(); }
 function failed(text) { failedstatusbar.setContent(text); screen.render(); }
@@ -126,4 +158,4 @@ async function uiQuestion(title, text, cb) {
 
 
 
-module.exports = { auth, success, failed, log, uiQuestion};
+module.exports = { auth, success, failed, log, uiQuestion, setTotalSuccess, setSessionSuccess};
