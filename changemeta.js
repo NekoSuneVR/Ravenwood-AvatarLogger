@@ -20,7 +20,7 @@ function windowsPostBuild(output) {
         {lang: 1033, codepage: 1200},
         {
             ProductName: 'Ravenwood AviLogger',
-            FileDescription: 'Logs Avis',
+            FileDescription: 'Ravenwood AviLogger',
             CompanyName: 'Ravenwood.dev',
             LegalCopyright: `Copyright Lua Ravenwood. MIT license.`
         }

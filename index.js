@@ -13,8 +13,9 @@ config.createConfig()
 const data = config.readConfig();
 var ccacheloc = data.cachelocation
 
-var successsess = 0
 
+//Set Default Values
+var successsess = 0
 var userid = ""
 var cacheloc = ""
 
@@ -25,7 +26,7 @@ async function connectDC() {
     const clientId = '1040393005640732683';
     const rpc = new DiscordRPC.Client({ transport: 'ipc' });
     rpc.on('ready', () => {
-      auth(` ${rpc.user.username}#${rpc.user.discriminator}`);
+      auth(` ${rpc.user.username}`);
       userid = rpc.user.id
     });
     let login = await rpc.login({ clientId })
@@ -34,6 +35,7 @@ async function connectDC() {
   }
 }
 
+//Define Prompts and Cache Location
 function getcachelocation() {
   return new Promise(resolve => {
     uiQuestion(" Cache Location ", 'Enter VRCHAT Cache location (Leave blank for default)', val  => resolve(val))});
@@ -43,6 +45,8 @@ function promtloginitial() {
     uiQuestion(" Inital Log ", 'Do you want to scan your cache before logging? (Y/N)', val  => resolve(val))});
 }
 
+
+//Discord User Check
 checkDC()
 
 

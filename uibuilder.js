@@ -26,7 +26,7 @@ var screen = blessed.screen({ smartCSR: true, title: 'Ravenwood Logger' }),
         width: '30%',
         height: 3,
         align: 'center',
-        content: 'Ravenwood Logger (v1.0.2)',
+        content: 'Ravenwood Logger (v1.0.3)',
         style: {
           fg: 'white',
           bg: 'purple'
